@@ -10,13 +10,28 @@ class Game {
     container.style.width = this.width + "px";
     container.style.position = "relative";
 
-    this.ball = new Ball("darkblue", 30, 30, 50, 1);
+    this.ball = new Ball("darkblue", 30, 30, 50, 2);
     this.brickList = this.level.bricks;
+    this.paddle = new Paddle("darkred", 15, 120, 20);
   }
   start() {
     this.container.appendChild(this.ball.ball);
     this.brickList.forEach((brick) => {
       this.container.appendChild(brick.dom);
+    });
+
+    this.container.appendChild(this.paddle.paddle);
+    document.addEventListener("keydown", (event) => {
+      const key = event.key;
+      console.log(key);
+      switch (key) {
+        case "ArrowLeft":
+          this.paddle.moveLeft();
+          break;
+        case "ArrowRight":
+          this.paddle.moveRight(this.width);
+          break;
+      }
     });
   }
 
@@ -24,6 +39,7 @@ class Game {
     this.ball.move();
     this.ball.checkCollisionWithBricks(this.brickList);
     this.ball.checkCollisionWithWall(this.width, this.height);
+    this.ball.checkCollisionWithPaddle(this.paddle);
   }
 
   updateView() {
@@ -40,10 +56,10 @@ class Ball {
     this.width = width;
     this.borderRadius = borderRadius;
     this.speed = speed;
-    this.x = 0;
-    this.y = 200;
-    this.directionY = Math.sin((45 * Math.PI) / 180) + 1;
-    this.directionX = Math.cos((45 * Math.PI) / 180) + 3;
+    this.x = 200;
+    this.y = 250;
+    this.directionY = -Math.sin((45 * Math.PI) / 180);
+    this.directionX = -Math.cos((45 * Math.PI) / 180);
     // Create a ball
     this.ball = document.createElement("div");
     this.ball.style.backgroundColor = this.color;
@@ -75,7 +91,18 @@ class Ball {
     }
 
     if (this.y + this.height > gameHeight) {
-      this.directionY = -this.directionY;
+      alert("GAMEOVER!");
+      clearInterval(interval);
+      interval = null;
+      game.ball.x = 200;
+      game.ball.y = 250;
+      game.ball.directionX = -Math.cos((45 * Math.PI) / 180);
+      game.ball.directionY = -Math.sin((45 * Math.PI) / 180);
+      game.brickList.forEach((brick) => {
+        brick.show = true;
+        brick.updateView();
+      });
+      game.updateView();
     }
 
     if (this.y < 0) {
@@ -98,6 +125,16 @@ class Ball {
         brick.show = false;
       }
     });
+  }
+  checkCollisionWithPaddle(paddle) {
+    console.log(paddle.y);
+    if (
+      this.x <= paddle.x + paddle.width &&
+      this.y + this.height >= paddle.y &&
+      this.x + this.width >= paddle.x
+    ) {
+      this.directionY = -1 * this.directionY;
+    }
   }
 }
 class Brick {
@@ -143,6 +180,36 @@ class Level {
       );
     }
     return bricks;
+  }
+}
+class Paddle {
+  constructor(color, height, width) {
+    this.color = color;
+    this.height = height;
+    this.width = width;
+    this.x = 0;
+    this.y = 385;
+    // Create a paddle
+    this.paddle = document.createElement("div");
+    this.paddle.style.backgroundColor = this.color;
+    this.paddle.style.height = this.height + "px";
+    this.paddle.style.width = this.width + "px";
+    this.paddle.style.position = "absolute";
+    this.paddle.style.left = this.x + "px";
+    this.paddle.style.top = this.y + "px";
+  }
+  moveRight(gameWidth) {
+    if (this.x + this.width < gameWidth) {
+      this.x += 8;
+      this.paddle.style.left = this.x + "px";
+    }
+  }
+
+  moveLeft() {
+    if (this.x > 0) {
+      this.x -= 8;
+      this.paddle.style.left = this.x + "px";
+    }
   }
 }
 //levelDatas
@@ -228,9 +295,23 @@ loadLevel(currentLevel);
 
 startButton.addEventListener("click", () => {
   if (!interval) {
+    let levelCompleted = false;
+
     interval = setInterval(() => {
       game.update();
       game.updateView();
+
+      if (!levelCompleted) {
+        const allBricksHidden = game.brickList.every(
+          (brick) => brick.dom.style.display === "none"
+        );
+        if (allBricksHidden) {
+          levelCompleted = true;
+          alert("UPGRADED TO NEXT LEVEL");
+          currentLevel++;
+          loadLevel(currentLevel);
+        }
+      }
     }, 10);
   }
 });
@@ -238,10 +319,10 @@ startButton.addEventListener("click", () => {
 reSetButton.addEventListener("click", () => {
   clearInterval(interval);
   interval = null;
-  game.ball.x = 0;
-  game.ball.y = 200;
-  game.ball.directionX = Math.cos((45 * Math.PI) / 180) + 3;
-  game.ball.directionY = Math.sin((45 * Math.PI) / 180) + 1;
+  game.ball.x = 200;
+  game.ball.y = 250;
+  game.ball.directionX = -Math.cos((45 * Math.PI) / 180) + 3;
+  game.ball.directionY = -Math.sin((45 * Math.PI) / 180) + 1;
   game.brickList.forEach((brick) => {
     brick.show = true;
     brick.updateView();
