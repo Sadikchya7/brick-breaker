@@ -49,6 +49,29 @@ class Game {
     });
   }
 }
+class Score {
+  constructor(container, bricks) {
+    container.height = "50px";
+    container.width = "100px";
+    container.innerHTML = "SCORE" + this.score(bricks);
+    container.classList.add("score");
+    this.updateScore(container, bricks);
+  }
+
+  updateScore(container, bricks) {
+    const currentScore = this.score(bricks);
+    container.innerHTML = "SCORE: " + currentScore;
+  }
+  score(bricks) {
+    let scoreid = 0;
+    bricks.forEach((brick) => {
+      if (!brick.show) {
+        scoreid++;
+      }
+    });
+    return scoreid;
+  }
+}
 class Ball {
   constructor(color, height, width, borderRadius, speed) {
     this.color = color;
@@ -92,6 +115,7 @@ class Ball {
 
     if (this.y + this.height > gameHeight) {
       alert("GAMEOVER!");
+      score.updateScore(scoreDiv, game.brickList);
       clearInterval(interval);
       interval = null;
       game.ball.x = 200;
@@ -147,10 +171,10 @@ class Brick {
     this.show = true;
 
     const brickBox = document.createElement("div");
+    brickBox.classList.add("brick");
     brickBox.style.backgroundColor = this.color;
     brickBox.style.height = this.height + "px";
     brickBox.style.width = this.width + "px";
-    brickBox.style.position = "absolute";
     brickBox.style.left = this.x + "px";
     brickBox.style.top = this.y + "px";
     this.dom = brickBox;
@@ -214,69 +238,62 @@ class Paddle {
 }
 //levelDatas
 const level1Data = [
-  { color: "black", height: 50, width: 100, x: 0, y: 0 },
-  { color: "black", height: 50, width: 100, x: 110, y: 0 },
-  { color: "black", height: 50, width: 100, x: 220, y: 0 },
+  { color: "gray", height: 50, width: 100, x: 20, y: 0 },
+  { color: "lightyellow", height: 50, width: 100, x: 130, y: 0 },
+  { color: "lightgreen", height: 50, width: 100, x: 240, y: 0 },
+  { color: "lightgreen", height: 50, width: 100, x: 350, y: 0 },
+
+  { color: "lightyellow", height: 50, width: 100, x: 90, y: 60 },
+  { color: "lightgreen", height: 50, width: 100, x: 190, y: 60 },
+  { color: "gray", height: 50, width: 100, x: 290, y: 60 },
 ];
 const level2Data = [
   { color: "green", height: 50, width: 100, x: 0, y: 0 },
-  { color: "green", height: 50, width: 100, x: 110, y: 50 },
-  { color: "green", height: 50, width: 100, x: 220, y: 0 },
+  { color: "pink", height: 50, width: 100, x: 110, y: 50 },
+  { color: "brown", height: 50, width: 100, x: 220, y: 0 },
 ];
 const level3Data = [
   { color: "orange", height: 50, width: 100, x: 0, y: 0 },
-  { color: "orange", height: 50, width: 100, x: 110, y: 50 },
-  { color: "orange", height: 50, width: 100, x: 220, y: 100 },
+  { color: "gray", height: 50, width: 100, x: 110, y: 50 },
+  { color: "yellow", height: 50, width: 100, x: 220, y: 100 },
 ];
 
 const levels = [level1Data, level2Data, level3Data];
 let currentLevel = 0;
 let interval = null;
 let game;
+let score;
 
 const firstDiv = document.getElementById("main");
 firstDiv.style.height = "1200px";
 
+const scoreDiv = document.createElement("div");
+
 const gameDiv = document.createElement("div");
 gameDiv.style.display = "flex";
 gameDiv.style.position = "relative";
+firstDiv.appendChild(scoreDiv);
 firstDiv.appendChild(gameDiv);
 
 //button container
 
+//button Container
 const buttonDiv = document.createElement("div");
 buttonDiv.style.display = "flex";
 buttonDiv.style.justifyContent = "space-between";
 buttonDiv.style.width = "500px";
-
 const startButton = document.createElement("button");
 startButton.innerHTML = "START";
-startButton.style.height = 40 + "px";
-startButton.style.width = 100 + "px";
-startButton.style.display = "inline-flex";
-startButton.style.backgroundColor = "red";
-startButton.style.position = "relative";
-startButton.style.alignItems = "center";
+
 buttonDiv.appendChild(startButton);
 
 const reSetButton = document.createElement("button");
 reSetButton.innerHTML = "RE-SET";
-reSetButton.style.height = 40 + "px";
-reSetButton.style.width = 100 + "px";
-reSetButton.style.display = "inline-flex";
-reSetButton.style.backgroundColor = "red";
-reSetButton.style.position = "relative";
-reSetButton.style.alignItems = "center";
+
 buttonDiv.appendChild(reSetButton);
 
 const nextButton = document.createElement("button");
 nextButton.innerHTML = "NEXT";
-nextButton.style.height = 40 + "px";
-nextButton.style.width = 100 + "px";
-nextButton.style.display = "inline-flex";
-nextButton.style.backgroundColor = "red";
-nextButton.style.alignItems = "center";
-nextButton.style.position = "relative";
 buttonDiv.appendChild(nextButton);
 
 firstDiv.appendChild(buttonDiv);
@@ -289,6 +306,7 @@ function loadLevel(i) {
   gameDiv.innerHTML = "";
   game = new Game(gameDiv, "lightblue", 400, 500, levels[i]);
   game.start();
+  score = new Score(scoreDiv, game.brickList);
 }
 
 loadLevel(currentLevel);
@@ -300,6 +318,7 @@ startButton.addEventListener("click", () => {
     interval = setInterval(() => {
       game.update();
       game.updateView();
+      score.updateScore(scoreDiv, game.brickList);
 
       if (!levelCompleted) {
         const allBricksHidden = game.brickList.every(
@@ -307,7 +326,8 @@ startButton.addEventListener("click", () => {
         );
         if (allBricksHidden) {
           levelCompleted = true;
-          alert("UPGRADED TO NEXT LEVEL");
+          // alert("UPGRADED TO NEXT LEVEL");
+
           currentLevel++;
           loadLevel(currentLevel);
         }
@@ -321,16 +341,19 @@ reSetButton.addEventListener("click", () => {
   interval = null;
   game.ball.x = 200;
   game.ball.y = 250;
-  game.ball.directionX = -Math.cos((45 * Math.PI) / 180) + 3;
-  game.ball.directionY = -Math.sin((45 * Math.PI) / 180) + 1;
+  game.ball.directionX = -Math.cos((45 * Math.PI) / 180);
+  game.ball.directionY = -Math.sin((45 * Math.PI) / 180);
   game.brickList.forEach((brick) => {
     brick.show = true;
     brick.updateView();
   });
   game.updateView();
+  score.updateScore(scoreDiv, game.brickList);
 });
 
 nextButton.addEventListener("click", () => {
+  score.updateScore(scoreDiv, game.brickList);
+
   if (currentLevel < levels.length - 1) {
     currentLevel++;
     loadLevel(currentLevel);
